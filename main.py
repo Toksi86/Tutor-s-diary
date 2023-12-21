@@ -20,7 +20,6 @@ def get_students(sheet) -> list:
         students.append(a)
     if len(students) == 0:
         print('Список студентов пустой. Заполните файл Ученики')
-        # TODO: Вызвать исключение и обработать в функции main
         exit()
     elif len(students) == 1:
         students.append('')
@@ -29,22 +28,29 @@ def get_students(sheet) -> list:
 
 def get_dates(sheet) -> list:
     """Получение даты начала и окончания обучения"""
-    # TODO: проверить, что объекты являются классами datetime, иначе вызвать исключение
-    start_date = Date(date_time=sheet['B1'].value)
-    end_date = Date(date_time=sheet['C1'].value)
-    return [start_date, end_date]
+    try:
+        start_date = Date(date_time=sheet['B1'].value)
+        end_date = Date(date_time=sheet['C1'].value)
+        return [start_date, end_date]
+    except AttributeError:
+        print('Данные введены не в формате даты')
+        exit()
 
 
 def read_information_document() -> Info:
-    """Чтение студентов и даты из файла Ученики.xlsx"""
+    """Чтение списка студентов и даты из файла Ученики.xlsx"""
     file_path = 'Ученики.xlsx'
     # TODO: Проверить, что файл существует
-    excel_doc = op.open(filename=file_path, data_only=True)
-    sheet = excel_doc[excel_doc.sheetnames[0]]
+    try:
+        excel_doc = op.open(filename=file_path, data_only=True)
+        sheet = excel_doc[excel_doc.sheetnames[0]]
 
-    data = Info(get_students(sheet), *get_dates(sheet))
+        data = Info(get_students(sheet), *get_dates(sheet))
 
-    return data
+        return data
+    except FileNotFoundError:
+        print('Не существует файл "Ученики.xlsx"')
+        exit()
 
 
 def main():
