@@ -1,4 +1,5 @@
 import locale
+import sys
 from collections import namedtuple
 
 import openpyxl as op
@@ -19,8 +20,7 @@ def get_students(sheet) -> list:
         table_index += 1
         students.append(a)
     if len(students) == 0:
-        print('Список студентов пустой. Заполните файл Ученики')
-        exit()
+        sys.exit('Список студентов пустой. Заполните файл Ученики')
     elif len(students) == 1:
         students.append('')
     return students
@@ -33,14 +33,12 @@ def get_dates(sheet) -> list:
         end_date = Date(date_time=sheet['C1'].value)
         return [start_date, end_date]
     except AttributeError:
-        print('Данные введены не в формате даты')
-        exit()
+        sys.exit('Данные введены не в формате даты')
 
 
 def read_information_document() -> Info:
     """Чтение списка студентов и даты из файла Ученики.xlsx"""
     file_path = 'Ученики.xlsx'
-    # TODO: Проверить, что файл существует
     try:
         excel_doc = op.open(filename=file_path, data_only=True)
         sheet = excel_doc[excel_doc.sheetnames[0]]
@@ -49,8 +47,7 @@ def read_information_document() -> Info:
 
         return data
     except FileNotFoundError:
-        print('Не существует файл "Ученики.xlsx"')
-        exit()
+        sys.exit('Не существует файл "Ученики.xlsx"')
 
 
 def main():
