@@ -1,43 +1,80 @@
-from openpyxl import Workbook
+import locale
+import sys
+from collections import namedtuple
+
+import openpyxl as op
 
 from date import Date
 
-wb = Workbook()
-ws = wb.active
-ws.title = 'Дневник наблюдений'
+locale.setlocale(locale.LC_ALL, 'ru_RU.UTF-8')
+
+Info = namedtuple('Info', ['students', 'date_start', 'date_end'])
 
 
-header = ['Дата', 'Имя ученика', 'Эмоциональное состояние ребёнка',
-          'Деятельность, затруднения, достижения',
-          ]
+def get_students(sheet) -> list:
+    """Получение списка студентов"""
+    table_index = 4
+    students = []
+    while sheet[f'A{table_index}'].value is not None:
+        a = sheet[f'A{table_index}'].value
+        table_index += 1
+        students.append(a)
+    if len(students) == 0:
+        sys.exit('Список студентов пустой. Заполните файл Ученики')
+    elif len(students) == 1:
+        students.append('')
+    return students
 
-while True:
-    number_of_students = input('Введите число обучающихся: ')
-    if number_of_students.isdigit():
-        number_of_students = int(number_of_students)
-        break
+
+def get_dates(sheet) -> list:
+    """Получение даты начала и окончания обучения"""
+    try:
+        start_date = Date(date_time=sheet['B1'].value)
+        end_date = Date(date_time=sheet['C1'].value)
+        return [start_date, end_date]
+    except AttributeError:
+        sys.exit('Данные введены не в формате даты')
 
 
-# TODO: Получать учеников из другого excel файла
-students = []
+def read_information_document() -> Info:
+    """Чтение списка студентов и даты из файла Ученики.xlsx"""
+    file_path = 'Ученики.xlsx'
+    try:
+        excel_doc = op.open(filename=file_path, data_only=True)
+        sheet = excel_doc[excel_doc.sheetnames[0]]
 
-for _ in range(number_of_students):
-    student = input('Введите ФИО студента: ')
-    students.append(student)
+        data = Info(get_students(sheet), *get_dates(sheet))
 
-while len(students) < 2:
-    students.append('')
+        return data
+    except FileNotFoundError:
+        sys.exit('Не существует файл "Ученики.xlsx"')
 
-ws.append(header)
 
-# TODO: дать возможность пользователю ввести дату начала и конца обучения из другого файла excel
-current_date = Date(2023, 9, 4)
+def main():
+    wb = op.Workbook()
+    ws = wb.active
+    ws.title = 'Дневник наблюдений'
 
-while current_date < Date(2024, 5, 24):
-    ws.append([current_date.get_datetime_with_format(), students[0]])
-    ws.append([current_date.get_weekday(), students[1]])
-    for i in range(2, len(students)):
-        ws.append(['', students[i]])
-    current_date = current_date.next_workday()
+    header = ['Дата', 'Имя ученика', 'Эмоциональное состояние ребёнка',
+              'Деятельность, затруднения, достижения',
+              ]
+    ws.append(header)
 
-wb.save('Дневник.xlsx')
+    data = read_information_document()
+
+    start_date = data.date_start
+    end_date = data.date_end
+    current_date = start_date
+
+    while current_date < end_date:
+        ws.append([current_date.get_datetime_with_format(), data.students[0]])
+        ws.append([current_date.get_weekday(), data.students[1]])
+        for i in range(2, len(data.students)):
+            ws.append(['', data.students[i]])
+        current_date = current_date.next_workday()
+
+    wb.save('Дневник.xlsx')
+
+
+if __name__ == '__main__':
+    main()
